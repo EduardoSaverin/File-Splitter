@@ -4,7 +4,7 @@ import ntpath
 from utils import utils
 
 class SplitFile(object):
-    def __init__(self, file, out_dir = '.', num_of_splits=3,encoding=None,remove_existing=False,buffer=1024*1024*1024*1):
+    def __init__(self, file, out_dir = '.', num_of_splits=3,remove_existing=False,buffer=1024*1024*1024*1):
         self.logger = logging.getLogger(__name__)
         self.logger.info("Initializing File Split")
         
@@ -14,7 +14,6 @@ class SplitFile(object):
 
         self.file = file
         self.splits = num_of_splits
-        self.encoding = encoding
         self.outdir = out_dir
         self.buffer = buffer # 1GB Default, Reduce this buffer if your device is a small enough like rasp
         self.remove_existing = remove_existing
@@ -28,14 +27,14 @@ class SplitFile(object):
         filename, ext = os.path.splitext(file)
         filecount = 1
         self.remaining_splits = self.splits
-        with open(self.file, mode="rb") as in_file:
+        with open(self.file, mode="rb",buffering=self.buffer) as in_file:
             while self.remaining_splits > 0:
                 output_file = os.path.join(self.outdir,f"{filename}_{filecount}{ext}")
                 # Remove if file already exists
                 if os.path.exists(output_file) and self.remove_existing:
                     self.logger.debug(f"Removing existing file {output_file}")
                     os.remove(output_file)
-                with open(file = output_file, mode="wb") as out_file:
+                with open(file = output_file, mode="wb",buffering=self.buffer) as out_file:
                     self.logger.info(f'Processing Part {filecount} of {self.file}')
                     self.process_file(in_file,out_file)
                 filecount += 1
@@ -43,7 +42,6 @@ class SplitFile(object):
     
     def process_file(self, in_file, output_file):    
         try:
-            # There is a problem with this approach because if file is large then we will end up in reading whole file to memory
             # If you understand this line then you know how file read/write works
             split_size = os.path.getsize(self.file) if self.remaining_splits == 1 else self.each_split_size
             self.logger.error(f"Split Size : {split_size}")
@@ -56,7 +54,7 @@ class SplitFile(object):
             pass
 
 if __name__ == '__main__':
-    sp = SplitFile(file='/home/sumit/Documents/Coding/Project/Python File Splitter & Joiner/test/Spy.mkv',encoding='utf-8',remove_existing=True)
+    sp = SplitFile(file='/home/sumit/Python Projects/Python File Splitter & Joiner/test/Spy.mkv',remove_existing=True)
     sp.split()
 
 # Run Command
